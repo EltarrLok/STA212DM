@@ -1,0 +1,59 @@
+---
+title: 'STA212 : Devoir : aspects pratiques'
+author: "Eltarr, Durand"
+date: "09/05/2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Arbre de décision unique
+
+```{r}
+setwd('/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM')
+rm(list = objects())
+graphics.off()
+OJ=read.csv("oj.csv", header = TRUE)
+#View(OJ)
+```
+
+On regarde la nature de nos données. On a 1070 observations pour 18 variables différentes. Les variables categorielles sont $\texttt{Purchase}$ qui admet deux niveaux, et $\texttt{Store 7}$ qui admet aussi deux niveaux. Les autres sont numériques.
+```{r}
+str(OJ) 
+```
+
+## Analyse Univariée et Bivariée
+On procéde à une analyse univariée des variables. On se sert de la description des variables ainsi que des commandes $\texttt{summary}$, $\texttt{plot}$ et $\texttt{table}$.
+
+Par exemple, on peut voir que les variables $\texttt{SpecialCH}$ et $\texttt{SpecialMM}$ prennent seulement les valeurs 0 et 1.
+```{r}
+table(OJ$SpecialCH)
+plot(OJ$SpecialCH)
+```
+
+```{r}
+table(OJ$SpecialMM)
+plot(OJ$SpecialMM)
+```
+De la même manière $\texttt{STORE}$ ne prend que les valeurs entre 0 et 4.
+```{r}
+table(OJ$STORE)
+plot(OJ$STORE)
+```
+
+On préfère alors les transformer en variables catégorielles:
+
+```{r}
+OJ$SpecialMM <- as.factor(OJ$SpecialMM)
+OJ$SpecialCH <- as.factor(OJ$SpecialCH)
+OJ$STORE <- as.factor(OJ$STORE+1) ## On préfère avoir des valeurs entre 1 et 5.
+```
+
+Ensuite, on voit que la variable $\texttt{PriceDiff}$ est une combinaison des deux variables $\texttt{SalePriceMM}$ et $\texttt{SalePriceCH}$. On décide alors de la retrouver.
+
+```{r}
+OJ <- subset(OJ, select=-PriceDiff)
+```
