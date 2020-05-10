@@ -53,6 +53,10 @@ table(OJ$SpecialCH)
 plot(OJ$SpecialCH)
 ```
 
+
+
+
+
 ```{r}
 table(OJ$SpecialMM)
 plot(OJ$SpecialMM)
@@ -76,3 +80,174 @@ Ensuite, on voit que la variable $\texttt{PriceDiff}$ est une combinaison des de
 ```{r}
 OJ <- subset(OJ, select=-PriceDiff)
 ```
+
+
+
+
+
+# Forêt aléatoires
+
+
+```{r echo = FALSE, results=FALSE, warning=FALSE, include = FALSE}
+setwd('~/Cours/STA212/STA212DM')
+rm(list = objects())
+graphics.off()
+library(readr)
+email <- read_csv("~/Cours/STA212/STA212DM/email.csv")
+View(email)
+```
+
+Il faut tout d'abord changer la variable Class en variable factor :
+
+```{r}
+email$Class = as.factor(email$Class)
+```
+
+
+## Question 4
+
+```{r results=FALSE}
+require(rpart)
+require(rpart.plot)
+require(ipred)
+require(caret)
+require(randomForest)
+require(doParallel)
+N = nrow(email)
+set.seed(103)
+train = sample(1:N, round(0.75*N))
+email.tr = email[train,]
+email.te = email[-train,]
+```
+
+```{r echo = FALSE, results=FALSE}
+summary(email)
+```
+
+
+```{r echo = FALSE, results=FALSE, include = FALSE}
+library(corrplot)
+corrplot(cor(email[,-58]), tl.pos="n")
+```
+
+Ajustons tout d'abord un arbre sans élagage :
+
+```{r}
+cart.0 <- rpart(Class~.,
+                data=email.tr, 
+                control=rpart.control(minsplit=1,cp=0, xval=30)) # minsplit=1,cp=0
+                                                                # pour avoir un arbre le
+                                                                # plus profond possible
+rpart.plot(cart.0)
+
+```
+
+Puis élagons cette arbre :
+
+```{r}
+cart.pruned <- prune(cart.0, cp = cart.0$cptable[which.min(cart.0$cptable[,"xerror"]),"CP"])
+rpart.plot(cart.pruned)
+```
+
+Enfin on calcul l'erreur de test (taux de mauvais classement), en appliquant la règle de Bayes :
+
+```{r}
+pred.pruned <- predict(cart.pruned, email.te)
+mean(abs(ifelse(email.te$Class == "Spam", 1,0) - ifelse(pred.pruned[,2] >.5, 1,0)))
+
+```
+
+Nous atteignons donc un taux de mauvais classement de 8% avec ce modèle. 
+
+Pour 
+
+## Question 5
+
+Nous réalisons un bagging 100 arbres de décisions à l'aide de la fonction bagging de la librairie ipred :
+
+```{r}
+bag.email <- bagging(Class~., data=email.tr, mfinal=100)
+
+```
+
+Puis on peut évaluer l'erreur de test :
+
+```{r}
+pred.bag <- predict(bag.email, email.te)
+mean(abs(ifelse(email.te$Class == "Spam", 1,0) - ifelse(pred.bag == "Spam", 1,0)))
+```
+
+
+Nous avons donc une erreur de test de 7,5%.
+
+
+
+## Question 6
+
+Enfin, nous ajustons un modèle random forrest à 100 arbres en choisisant le mtry, (c'est à dire le nombre de variable que l'on prend pour chaque arbre), par validation croisée.
+
+```{r eval=FALSE, include = FALSE}
+cl <- makePSOCKcluster(5)
+registerDoParallel(cl)
+
+control <- trainControl(method="repeatedcv", number=5, repeats=10)
+rfGrid <-  expand.grid(mtry = 55:55)
+RFmodel <- train(Class~., data=email.tr, method="rf", 
+                 trControl=control,
+                 ntree=100, 
+                 tuneGrid = rfGrid,
+                 verbose=FALSE)
+stopCluster(cl)
+plot(RFmodel)
+
+```
+
+Le choix de mtry est reproductible grâce à la validation croisée.
+
+Puis on peut évaluer l'erreur de test :
+```{r eval=FALSE, include = FALSE}
+pred.rf <- predict(RFmodel, email.te)
+mean(email.te$Class != pred.rf)
+
+```
+
+On a une erreur de test de 7%.
+
+## Question 7
+
+
+
+# Autour de l’algorithme Adaboost
+
+## Question 10
+
+$$
+\begin{tabular}{|l|M{4cm}|M{4cm}|M{4cm}|r|}
+    \hline
+     & &     Perte \\
+     & & exponentielle & Perte binaire \\
+     \hat{c}(x_*) & \hat{y}_* & exp(-y_* \hat{c}(x_*)) & 1(y_* \neq \hat{y}_*) & y_* \tabularnewline
+    \hline
+    0.3 & & & & -1
+\tabularnewline
+    \hline
+    -0.2 & & & & -1
+\tabularnewline
+    \hline
+    1.5 & & & & 1
+\tabularnewline
+    \hline
+    -4.3 & & & & 1
+\tabularnewline
+    \hline
+ \end{tabular}
+$$
+
+
+
+
+
+
+
+
+
