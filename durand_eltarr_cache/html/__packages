@@ -11,3 +11,5 @@ foreach
 iterators
 doParallel
 corrplot
+JOUSBoost
+xgboost

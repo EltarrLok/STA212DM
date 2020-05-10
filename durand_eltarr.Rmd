@@ -4,9 +4,9 @@ header-includes:
 - \usepackage{amsfonts}
 - \usepackage{amsmath}
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 ---
 
 
@@ -34,8 +34,8 @@ Loukman Eltarr
 # Arbre de décision unique
 
 ```{r}
-#setwd('~/Cours/STA212/STA212DM')
-setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
+setwd('~/Cours/STA212/STA212DM')
+#setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
 rm(list = objects())
 graphics.off()
 OJ=read.csv("oj.csv", header = TRUE)
@@ -174,8 +174,8 @@ barchart(three.1$variable.importance,xlab = "Variables", ylab = "Importance", ma
 
 
 ```{r echo = FALSE, results=FALSE, warning=FALSE, include = FALSE}
-#setwd('~/Cours/STA212/STA212DM')
-setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
+setwd('~/Cours/STA212/STA212DM')
+#setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
 rm(list = objects())
 graphics.off()
 library(readr)
