@@ -189,6 +189,7 @@ require(ipred)
 require(caret)
 require(randomForest)
 require(doParallel)
+require(JOUSBoost)
 ```
 
 ```{r results=FALSE}
@@ -265,12 +266,12 @@ Nous avons donc une erreur de test de 7,5%.
 
 Enfin, nous ajustons un modèle random forrest à 100 arbres en choisisant le mtry, (c'est à dire le nombre de variable que l'on prend pour chaque arbre), par validation croisée.
 
-```{r eval=FALSE}
+```{r cache = TRUE}
 cl <- makePSOCKcluster(5)
 registerDoParallel(cl)
 
 control <- trainControl(method="repeatedcv", number=5, repeats=10)
-rfGrid <-  expand.grid(mtry = 50:57)
+rfGrid <-  expand.grid(mtry = 1:25)
 RFmodel <- train(Class~., data=email.tr, method="rf", 
                  trControl=control,
                  ntree=100, 
@@ -281,33 +282,39 @@ plot(RFmodel)
 
 ```
 
-Le choix de mtry est reproductible grâce à la validation croisée.
+Le choix de mtry fait par validation croisée n'est pas reproductible en pratique. Cela demande trop de temps de calcul pour réactualiser le mtry à chaque fois que les donnée changent.
 
 Puis on peut évaluer l'erreur de test :
-```{r eval=FALSE}
+```{r cache = TRUE}
 pred.rf <- predict(RFmodel, email.te)
 mean(abs(ifelse(email.te$Class == "Spam", 1,0) - ifelse(pred.rf == "Spam", 1,0)))
 
 ```
 
-On a une erreur de test de 7%.
+On a une erreur de test de 6%.
 
 ## Question 7
 
-
+Le modèle random forrest est le plus performant en terme d'erreur de test. Cependant, il est aussi le plus couteux en terme de temps de calcul, et n'est pas reproductible en pratique. Le modèle avec le bagging assez performant en terme d'erreur de test, et ne demande pas un trop grand temps de calcul. Néanmoins, 100 arbre avec bagging ne font pas beaucoup mieux qu'un seul arbre. En conclusion si on doit manipuler une trop grande base de données d'email, la complexité est bien trop grande pour utiliser le random forrest, nous préfèrerons le bagging même s'il n'y a pas un grand gain de performance avec le modèle Cart.
 
 # Autour de l’algorithme Adaboost
 
 ## Question 10
 
 
-\begin{tabular}{|l|c|c|c|r|} \hline & &  \textbf{Perte}  & &  \\ & & \textbf{exponentielle} & \textbf{Perte binaire} & \\ $\hat{c}(x_*)$ & $\hat{y}_*$ & $exp(-y_* \hat{c}(x_*))$ &   $1(y_* \neq \hat{y}_*)$ & $y_*$ \tabularnewline \hline 0.3 & & & & -1 \tabularnewline \hline -0.2 & & & & -1 \tabularnewline \hline 1.5 & & & & 1 \tabularnewline \hline -4.3 & & & & 1 \tabularnewline \hline \end{tabular}
+\begin{tabular}{|l|c|c|c|r|} \hline & &  \textbf{Perte}  & &  \\ & & \textbf{exponentielle} & \textbf{Perte binaire} & \\ $\hat{c}(x_*)$ & $\hat{y}_*$ & $exp(-y_* \hat{c}(x_*))$ &   $1(y_* \neq \hat{y}_*)$ & $y_*$ \tabularnewline \hline 0.3 & 1 & 1.35 & 1 & -1 \tabularnewline \hline -0.2 & -1 & 0.8187 & 0 & -1 \tabularnewline \hline 1.5 & 1 & 0.2231 & 0 & 1 \tabularnewline \hline -4.3 & -1 & 73.7 & 1 & 1 \tabularnewline \hline \end{tabular}
+
+Si $y_*$ et $\hat{c}(x_*)$ sont de signe différents, c'est à dire $exp(-y_* \hat{c}(x_*)) > 1$, alors $1(y_* \neq \hat{y}_*) = 1$, et réciproquement. Donc en comparant  $exp(-y_* \hat{c}(x_*))$ à 1 on connait entièrement $1(y_* \neq \hat{y}_*)$, c'est à dire les erreurs. Mais en plus, $exp(-y_* \hat{c}(x_*))$ nous dit à quel point on se trompe. On le voit à la dernière ligne du tableau,  $exp(-y_* \hat{c}(x_*)) = 73.7$ alors que l'on se trompe de façon moins importante à la première ligne : $exp(-y_* \hat{c}(x_*)) = 1.35$, on n'est pas pas loin de détecter la bonne réponse. Cela peut être utilisé dans le cadre du boosting : à la prochaine étape, on va donner plus de poids aux individus ayant une plus grande perte exponentielle, pour corriger le modèle là où il fait le plus d'erreurs.
 
 
+## Question 11
 
 
-
-
+```{r}
+ada.email = adaboost(as.matrix(email.tr[,-58]), ifelse(email.tr$Class == "Spam", 1, -1), tree_depth = 3, n_rounds = 100, verbose = FALSE,
+  control = NULL)
+plot(ada.email)
+```
 
 
 
