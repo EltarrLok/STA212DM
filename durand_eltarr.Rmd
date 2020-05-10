@@ -4,9 +4,9 @@ header-includes:
 - \usepackage{amsfonts}
 - \usepackage{amsmath}
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 
@@ -34,8 +34,8 @@ Loukman Eltarr
 # Arbre de décision unique
 
 ```{r}
-setwd('~/Cours/STA212/STA212DM')
-#setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
+#setwd('~/Cours/STA212/STA212DM')
+setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
 rm(list = objects())
 graphics.off()
 OJ=read.csv("oj.csv", header = TRUE)
@@ -51,20 +51,20 @@ str(OJ)
 On procéde à une analyse univariée des variables. On se sert de la description des variables ainsi que des commandes $\texttt{summary}$, $\texttt{plot}$ et $\texttt{table}$.
 
 Par exemple, on peut voir que les variables $\texttt{SpecialCH}$ et $\texttt{SpecialMM}$ prennent seulement les valeurs 0 et 1.
-```{r}
+```{r fig1, fig.height=4}
 table(OJ$SpecialCH)
 plot(OJ$SpecialCH)
 ```
 
 
 
-```{r}
+```{r fig2,  fig.height=4}
 table(OJ$SpecialMM)
 plot(OJ$SpecialMM)
 ```
 
 De la même manière $\texttt{STORE}$ ne prend que les valeurs entre 0 et 4.
-```{r}
+```{r fig3, fig.height=4}
 table(OJ$STORE)
 plot(OJ$STORE)
 ```
@@ -81,12 +81,13 @@ On regarde la proportion de "MM" par rapport à celle de "CH". Il ya plus de CH 
 table(OJ$Purchase)/nrow(OJ)
 plot(OJ$Purchase, main ="CH VS MM in Purchase",col=c("darkorange","darkolivegreen3"))
 ```
+
 ## Question 1
 On divise d'abord notre jeu de donnée en une partie **train** et une partie **test** 
 ```{r}
 set.seed(2) ## On précise la graine afin d'avoir la reproductibilité
 size_sample=800 ## tailer de notre echantillon train
-train <- sample(c(1:nrow(OJ)), size=floor(size_sample)) ## list comportant l'index de la partie train
+train <- sample(c(1:nrow(OJ)), size=floor(size_sample)) ## liste comportant l'index de la partie train
 ```
 
 ## Question 2
@@ -113,7 +114,9 @@ rpart.plot(three.1)
 ```
 
 On voit que le graphique obtenu sans élagage est difficilement lisible ou interpretable. Il présente aussi probablement un problèmes d'affichage au vu du de la trop importante information qu'il contient. Au contraire, pour l'arbre pourlequel on a utilisé l'élagage, on voit clairement les noeuds internees et les feuilles ainsi que les proportions associées.
+
 ### Erreurs de Prédiction
+
 On compare ensuite leurs erreurs de prediction.
 ```{r}
 pred.0 <- predict(three.0, OJ, type="class")
@@ -125,27 +128,34 @@ mean(OJ$Purchase[-train]!=pred.1[-train])
 On note que notre taux d'erreur est autour de 0.21 pour le premier arbre. Ell est légerement inférieur à 0.16 pour le deuxième. Le second est donc un légèrement meilleur. 
 
 ### Matrice de Confusion
+
 On dresse alors une matrice de confusion. On a :
+
 * Pour l'abre sans élagage : 
   * 142 CH qui ont correctement été prédits.
   * 31 CH qui ont été incorrectement prédits.
   * 26 MM qui ont été incorrectement prédits.
   * 71 MM qui ont correctement été prédits.
 Globalement la prediction est assez bonne. 
+
 ```{r}
 table(OJ$Purchase[-train],pred.0[-train],dnn = c("Purchase", "Prediction"))
 ```
+
 * Pour l'abre sans élagage : 
   * 151 CH qui ont correctement été prédits.
   * 22 CH qui ont été incorrectement prédits.
   * 21 MM qui ont été incorrectement prédits.
   * 77 MM qui ont correctement été prédits.
 Globalement la prediction est assez bonne. 
+
 ```{r}
 table(OJ$Purchase[-train],pred.1[-train],dnn = c("Purchase", "Prediction"))
 ```
 
 ## Question 3
+Ici on commente l'apparition de la feuille la plus à gauche.
+On peut voir que depuis la racine il ya une séparation selon la valeur de $\texttt{LoyalCH}$ par deux fois. En effet, l'algorithme a d'abord distingué les valeurs supérieures et inférieures à 0.5 puis identiquement pour la valeurs 0.74. La zone correspondant à $\texttt{LoyalCH}\,>\, 0.74$ contient donc 34% des obseevations.
 ```{r message=FALSE}
 rpart.plot(three.1)
 ```
@@ -164,13 +174,13 @@ barchart(three.1$variable.importance,xlab = "Variables", ylab = "Importance", ma
 
 
 ```{r echo = FALSE, results=FALSE, warning=FALSE, include = FALSE}
-setwd('~/Cours/STA212/STA212DM')
-#setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
+#setwd('~/Cours/STA212/STA212DM')
+setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
 rm(list = objects())
 graphics.off()
 library(readr)
 email <- read_csv("email.csv")
-View(email)
+#View(email)
 ```
 
 Il faut tout d'abord changer la variable Class en variable factor :
@@ -294,6 +304,63 @@ On a une erreur de test de 7%.
 
 ## Question 7
 
+
+# Bootstrap 
+## Question 8
+Ici, on considère une variable aléatoire $Y$ qui suit une loi normal de moyenne $\theta$ et de variance 1. On souhaiterait estimer son espérance par estimateur du maximul de vraisemblance.
+```{r}
+y = rnorm(100,4,1)
+```
+
+On a pour la vraisemblance
+\begin{align*}
+L(y_1,\dots,y_n\mid \theta) &= \displaystyle \prod_{i=1}^n \frac{1}{\sqrt{2\pi}}e^{(y_i-\theta)^2/2}\\
+&= \displaystyle \frac{1}{\sqrt{2\pi}^n}e^{\sum_{i=1}^n(y_i-\theta)^2/2}\\
+\mbox{En passant au log}\\
+\implies\\
+log(L(y_1,\dots,y_n\mid \theta)) &= \displaystyle log(\frac{1}{\sqrt{2\pi}^n})  + \sum_{i=1}^n(y_i-\theta)^2/2
+\end{align*}
+Maximisier la vraisemblance revient à maximiser $\displaystyle \frac{1}{2}\sum_{i=1}^n(y_i-\theta)^2$.
+On en déduit que l'EMV ici est $$\displaystyle \hat{\theta} = \frac{1}{n}\sum_{i=1}^ny_i.$$
+Il coïncide avec l'estimateur des moments et avec la moyenne empirique. On va produire plusieurs valeurs de $\hat{\theta}$ :
+
+```{r}
+n <- 100
+N <- 1000
+set.seed(11)
+theta_hat <- rowMeans(matrix(rnorm(N*n,4,1), N,n))
+boxplot(theta_hat,col = 'darkseagreen3')
+hist(theta_hat, ylab="Fréquence", xlab="Estimateur",main="Histograme de l'estimateur", col="orange",breaks = 40,probability=TRUE)
+x <-seq(3.5, 4.5, le=200)
+z <- 1/sqrt(n)
+points(x,dnorm(x, 4, z), type="l", lwd = 2, col="red")
+```
+
+## Question 9
+On se place maintenant dans un cas plus réaliste, c'est à dire qu'on ne dispose pas de nombreuses observations pour notre variable aléatoire. On se limite alors à un échantillon de taille $n=100$.
+La méthode bootsrtap se prête particulièrement à ce cas. 
+On tire aléatoirement $n\times N$ avec remise dans notre ensemble de réalisation $y$. pour obtenir $N$ éhcantillons de taille $n$. On prend alors la moyenne pour chaque échantillon.
+
+
+```{r}
+set.seed(11)
+Y = y[sample(c(1:n),n*N,replace =T)] ## Replace =TRUE permet d'effectuer un tirage avec remise
+Y_matrix = matrix(Y,byrow=TRUE, ncol = n) ## on a 1000 lignes avec 100 réalisations obtenues par tirage
+theta_hat <- rowMeans(Y_matrix)
+boxplot(theta_hat,col = 'mediumpurple1')
+hist(theta_hat, ylab="Fréquence", xlab="Estimateur",main="Histograme par boostrap", col="tomato",breaks = 40,probability=TRUE)
+x <-seq(3, 5, le=200)
+z <- 1/sqrt(n)
+points(x,dnorm(x, 4, z), type="l", lwd = 2, col="navy")
+```
+
+On peut remarquer que l'histograme obtenu par bootstrap est centré autour de 4.1 alors que le précédant l'est autour de 4. La méthode bootsrap a donc été assez précise et se rapproche d'une manière respectable de ce qu'on désirait. De plus on peut voir que la distribution des valeurs est quasiment symétrique. On remarque qu'il y a quelques valeurs qui dépasse le maximum dans les deux cas.
+Grâce aux lignes que l'on a tracé, on se rend facilement compte de l'écart ou de l'erreur de notre approximation. L'histogramme est légèrement décalé vers les valeurs plus hautes contrairement à celui du premier cas qui se confond pratiquement avec sa ligne.
+
+On aurait pu faire les mêmes observations depuis le box-plot. On voit que les valeurs obtenues par bootstrap sont centrées autour de 4.1 et qu'on la distribution est symétrique. Il y a un peu mois de valeurs abhérentes pour le bootsrap que pour le premier cas.
+
+
+On peut conclure que notre approximtion a été correcte et que le réchantillonage dit bootstrap peut palier aux problème de manque de données. On aurait aussi pu démontrer que le bootstraping était utile lorsqu'on on ne connait pas du tout la distribution des observations et peut permettre d'identifier des intervalles de confiance mais ce n'était pas là l'objet de l'exercice.
 
 
 # Autour de l’algorithme Adaboost
