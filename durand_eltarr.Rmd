@@ -233,7 +233,7 @@ rpart.plot(cart.0)
 
 ```
 
-Puis élagons cette arbre :
+Puis élagons cet arbre :
 
 ```{r}
 cart.pruned <- prune(cart.0, cp = cart.0$cptable[which.min(cart.0$cptable[,"xerror"]),"CP"])
@@ -250,7 +250,6 @@ mean(abs(ifelse(email.te$Class == "Spam", 1,0) - ifelse(pred.pruned[,2] >.5, 1,0
 
 Nous atteignons donc un taux de mauvais classement de 8% avec ce modèle. 
 
-Pour 
 
 ## Question 5
 
@@ -275,7 +274,7 @@ Nous avons donc une erreur de test de 7,5%.
 
 ## Question 6
 
-Enfin, nous ajustons un modèle random forrest à 100 arbres en choisisant le mtry, (c'est à dire le nombre de variable que l'on prend pour chaque arbre), par validation croisée.
+Enfin, nous ajustons un modèle random forest à 100 arbres en choisisant le mtry, (c'est à dire le nombre de variable que l'on prend pour chaque arbre), par validation croisée.
 
 ```{r cache = TRUE}
 cl <- makePSOCKcluster(5)
@@ -306,12 +305,12 @@ On a une erreur de test de 6%.
 
 ## Question 7
 
-Le modèle random forrest est le plus performant en terme d'erreur de test. Cependant, il est aussi le plus couteux en terme de temps de calcul, et n'est pas reproductible en pratique. Le modèle avec le bagging assez performant en terme d'erreur de test, et ne demande pas un trop grand temps de calcul. Néanmoins, 100 arbre avec bagging ne font pas beaucoup mieux qu'un seul arbre. En conclusion si on doit manipuler une trop grande base de données d'email, la complexité est bien trop grande pour utiliser le random forrest, nous préfèrerons le bagging même s'il n'y a pas un grand gain de performance avec le modèle Cart.
+Le modèle random forrest est le plus performant en terme d'erreur de test. Cependant, il est aussi le plus couteux en terme de temps de calcul, et n'est pas reproductible en pratique. Le modèle avec le bagging est assez performant en terme d'erreur de test, et ne demande pas un trop grand temps de calcul. Néanmoins, 100 arbres avec bagging ne font pas beaucoup mieux qu'un seul arbre. En conclusion si on doit manipuler une trop grande base de données d'email, la complexité est bien trop grande pour utiliser le random forest, nous préfèrerons le bagging même s'il n'y a pas un grand gain de performance avec le modèle Cart.
 
 
 # Bootstrap 
 ## Question 8
-Ici, on considère une variable aléatoire $Y$ qui suit une loi normal de moyenne $\theta$ et de variance 1. On souhaiterait estimer son espérance par estimateur du maximul de vraisemblance.
+Ici, on considère une variable aléatoire $Y$ qui suit une loi normal de moyenne $\theta$ et de variance 1. On souhaiterait estimer son espérance par estimateur du maximum de vraisemblance.
 ```{r}
 y = rnorm(100,4,1)
 ```
@@ -423,16 +422,16 @@ erreurtest_xgboost = function(N)
 On affiche ainsi l'erreur de test en fonction du nombre d'itérations :
 
 ```{r echo= TRUE}
-surajustement = sapply(seq(from = 1, to = 300, by = 5), erreurtest_xgboost)
+surajustement = sapply(seq(from = 1, to = 10000, by = 500), erreurtest_xgboost)
 
-plot(seq(from = 1, to = 1000, by = 5), surajustement, 
+plot(seq(from = 1, to = 10000, by = 500), surajustement, 
      type = "l",
      xlab = "itérations",
      ylab = "erreur de test", 
      main = "Phénomène de sur-ajustement")
 ```
 
-
+On voit bien le phénomène de sur-ajustement qui apparaît, l'erreur de test augmente car on veut trop coller aux données.
 
 
 
