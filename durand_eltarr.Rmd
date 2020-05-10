@@ -421,10 +421,10 @@ erreurtest_xgboost = function(N)
 
 On affiche ainsi l'erreur de test en fonction du nombre d'itérations :
 
-```{r echo= TRUE}
-surajustement = sapply(seq(from = 1, to = 10000, by = 500), erreurtest_xgboost)
+```{r cache= TRUE}
+surajustement = sapply(seq(from = 1, to = 5000, by = 500), erreurtest_xgboost)
 
-plot(seq(from = 1, to = 10000, by = 500), surajustement, 
+plot(seq(from = 1, to = 5000, by = 500), surajustement, 
      type = "l",
      xlab = "itérations",
      ylab = "erreur de test", 
@@ -433,9 +433,10 @@ plot(seq(from = 1, to = 10000, by = 500), surajustement,
 
 On voit bien le phénomène de sur-ajustement qui apparaît, l'erreur de test augmente car on veut trop coller aux données.
 
+# Conclusion
 
-
-
+Pour ce travail pratique, on a pu en particulier aborder des exercices de classification binaire pour deux jeux de données différents. On a d'abord pu comparer l'efficacité et l'intéprétabilité d'un arbre de décision avec et sans élagage. Ensuite on a confronté une méthode faisaint appel à un bagging pour 100 arbres de décision avec la méthodes des fôrets aléatoires.
+Puis, on a vu que les méthodes de bootstrap pouvaient être très précises lorsqu'on est dans une situation où on manque de données. Finalement, on a pu découvrir et se familisariser avec l'algorithme adaboost. Il présente lui  aussi des avantages intéressants.
 
 
 
