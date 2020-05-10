@@ -200,6 +200,7 @@ require(caret)
 require(randomForest)
 require(doParallel)
 require(JOUSBoost)
+require(xgboost)
 ```
 
 ```{r results=FALSE}
@@ -281,7 +282,7 @@ cl <- makePSOCKcluster(5)
 registerDoParallel(cl)
 
 control <- trainControl(method="repeatedcv", number=5, repeats=10)
-rfGrid <-  expand.grid(mtry = 1:25)
+rfGrid <-  expand.grid(mtry = 1:20)
 RFmodel <- train(Class~., data=email.tr, method="rf", 
                  trControl=control,
                  ntree=100, 
@@ -379,12 +380,62 @@ Si $y_*$ et $\hat{c}(x_*)$ sont de signe différents, c'est à dire $exp(-y_* \h
 
 ## Question 11
 
+Il faut prendre tree_depth = 2 car AdaBoost.M1 exécute à chaque étapes des règles de classifcation faible à partir d'arbres à deux feuilles. De plus n_rounds = 50, car l'énoncé nous demande 50 itérations d’entraînement.
 
 ```{r}
-ada.email = adaboost(as.matrix(email.tr[,-58]), ifelse(email.tr$Class == "Spam", 1, -1), tree_depth = 3, n_rounds = 100, verbose = FALSE,
+ada.email = adaboost(as.matrix(email.tr[,-58]), ifelse(email.tr$Class == "Spam", 1, -1), tree_depth = 2, n_rounds = 50, verbose = FALSE,
   control = NULL)
-plot(ada.email)
 ```
+
+Et l'erreur de test :
+
+```{r}
+pred.ada <- predict(ada.email, email.te)
+mean(abs(ifelse(email.te$Class == "Spam", 1,0) - ifelse(pred.ada == 1, 1,0)))
+
+```
+
+On fait donc une erreur de 6.5 %.
+
+## Question 12
+
+Avec la library xgboost :
+
+On reprend la classification d'email avec les mêmes données et la même partition. On opte pour un model de regression logistique binaire, en appliquant la règle de Bayes pour faire la prédiction. On peut ainsi évaluer l'erreur de test en fonction du nombre d'itérations dans le boosting :
+
+```{r}
+erreurtest_xgboost = function(N)
+{
+  xgb.email = xgboost(data = as.matrix(email.tr[,-58]), 
+                    label = ifelse(email.tr$Class == "Spam", 1, 0),
+                    objective = "binary:logistic",
+                    booster = "gbtree",
+                    nrounds = N,
+                    verbose = FALSE)
+  
+  pred.xgb <- predict(xgb.email, as.matrix(email.te[,-58]))
+  pred.xgb <- ifelse(pred.xgb >.5, 1, 0)
+  return (mean(abs(ifelse(email.te$Class == "Spam", 1,0) - ifelse(pred.xgb == 1, 1,0))))
+}
+
+```
+
+On affiche ainsi l'erreur de test en fonction du nombre d'itérations :
+
+```{r echo= TRUE}
+surajustement = sapply(seq(from = 1, to = 300, by = 5), erreurtest_xgboost)
+
+plot(seq(from = 1, to = 1000, by = 5), surajustement, 
+     type = "l",
+     xlab = "itérations",
+     ylab = "erreur de test", 
+     main = "Phénomène de sur-ajustement")
+```
+
+
+
+
+
 
 
 
