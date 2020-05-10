@@ -1,10 +1,11 @@
 ---
-output:
-  pdf_document: default
-
 header-includes:
-  - \usepackage{stmaryrd}
-  - \usepackage{amsfonts}
+- \usepackage{stmaryrd}
+- \usepackage{amsfonts}
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
 
@@ -32,7 +33,8 @@ Loukman Eltarr
 # Arbre de décision unique
 
 ```{r}
-setwd('~/Cours/STA212/STA212DM')
+#setwd('~/Cours/STA212/STA212DM')
+setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
 rm(list = objects())
 graphics.off()
 OJ=read.csv("oj.csv", header = TRUE)
@@ -44,7 +46,7 @@ On regarde la nature de nos données. On a 1070 observations pour 18 variables d
 str(OJ) 
 ```
 
-## Analyse Univariée et Bivariée
+## Analyse Univariée
 On procéde à une analyse univariée des variables. On se sert de la description des variables ainsi que des commandes $\texttt{summary}$, $\texttt{plot}$ et $\texttt{table}$.
 
 Par exemple, on peut voir que les variables $\texttt{SpecialCH}$ et $\texttt{SpecialMM}$ prennent seulement les valeurs 0 et 1.
@@ -55,12 +57,11 @@ plot(OJ$SpecialCH)
 
 
 
-
-
 ```{r}
 table(OJ$SpecialMM)
 plot(OJ$SpecialMM)
 ```
+
 De la même manière $\texttt{STORE}$ ne prend que les valeurs entre 0 et 4.
 ```{r}
 table(OJ$STORE)
@@ -74,26 +75,100 @@ OJ$SpecialMM <- as.factor(OJ$SpecialMM)
 OJ$SpecialCH <- as.factor(OJ$SpecialCH)
 OJ$STORE <- as.factor(OJ$STORE+1) ## On préfère avoir des valeurs entre 1 et 5.
 ```
-
-Ensuite, on voit que la variable $\texttt{PriceDiff}$ est une combinaison des deux variables $\texttt{SalePriceMM}$ et $\texttt{SalePriceCH}$. On décide alors de la retrouver.
-
+On regarde la proportion de "MM" par rapport à celle de "CH". Il ya plus de CH que de MM qui ont été commendés. La proportion est de 61%-39%.
 ```{r}
-OJ <- subset(OJ, select=-PriceDiff)
+table(OJ$Purchase)/nrow(OJ)
+plot(OJ$Purchase, main ="CH VS MM in Purchase",col=c("darkorange","darkolivegreen3"))
+```
+## Question 1
+On divise d'abord notre jeu de donnée en une partie **train** et une partie **test** 
+```{r}
+set.seed(2) ## On précise la graine afin d'avoir la reproductibilité
+size_sample=800 ## tailer de notre echantillon train
+train <- sample(c(1:nrow(OJ)), size=floor(size_sample)) ## list comportant l'index de la partie train
 ```
 
+## Question 2
+On va utiliser l'apprentissage par arbre de décision pour faire un prédction sur la partie test à partir de la partie train. On utilise d'baord un arbre obtenu sans élagage puis un autre avec élagage, on comparera ensuite la qualité des deux prédictions.
 
+```{r message=FALSE}
+require(rpart)
+require(rpart.plot)
+```
 
+```{r}
+## Arbre sans élagage
+#   # Avec minsplit =1 on continue à explorer un noeau tant qu'il y a plus d'une seule variable 
+#   # cp = 0 indique qu'on explore un noeau même si il n'apporte pas de précision supplémentaire 
+#   # xval= 10 pour le nombre de fold dans notre validation croisée
+three.0 <- rpart(Purchase~.,
+                data=OJ[train,], 
+                control=rpart.control(minsplit=1,cp=0, xval=10),model =TRUE)
+rpart.plot(three.0)
 
+## Arbre avec élagage
+three.1 <- prune(three.0, cp = three.0$cptable[which.min(three.0$cptable[,"xerror"]),"CP"],model =TRUE)
+rpart.plot(three.1)
+```
+
+On voit que le graphique obtenu sans élagage est difficilement lisible ou interpretable. Il présente aussi probablement un problèmes d'affichage au vu du de la trop importante information qu'il contient. Au contraire, pour l'arbre pourlequel on a utilisé l'élagage, on voit clairement les noeuds internees et les feuilles ainsi que les proportions associées.
+### Erreurs de Prédiction
+On compare ensuite leurs erreurs de prediction.
+```{r}
+pred.0 <- predict(three.0, OJ, type="class")
+mean(OJ$Purchase[-train]!=pred.0[-train])
+
+pred.1 <- predict(three.1, OJ, type="class")
+mean(OJ$Purchase[-train]!=pred.1[-train])
+```
+On note que notre taux d'erreur est autour de 0.21 pour le premier arbre. Ell est légerement inférieur à 0.16 pour le deuxième. Le second est donc un légèrement meilleur. 
+
+### Matrice de Confusion
+On dresse alors une matrice de confusion. On a :
+* Pour l'abre sans élagage : 
+  * 142 CH qui ont correctement été prédits.
+  * 31 CH qui ont été incorrectement prédits.
+  * 26 MM qui ont été incorrectement prédits.
+  * 71 MM qui ont correctement été prédits.
+Globalement la prediction est assez bonne. 
+```{r}
+table(OJ$Purchase[-train],pred.0[-train],dnn = c("Purchase", "Prediction"))
+```
+* Pour l'abre sans élagage : 
+  * 151 CH qui ont correctement été prédits.
+  * 22 CH qui ont été incorrectement prédits.
+  * 21 MM qui ont été incorrectement prédits.
+  * 77 MM qui ont correctement été prédits.
+Globalement la prediction est assez bonne. 
+```{r}
+table(OJ$Purchase[-train],pred.1[-train],dnn = c("Purchase", "Prediction"))
+```
+
+## Question 3
+```{r message=FALSE}
+rpart.plot(three.1)
+```
+
+On peut observer l'importance relative des variables.
+```{r message=FALSE}
+three.1$variable.importance
+```
+
+```{r message=FALSE}
+require(lattice)
+barchart(three.1$variable.importance,xlab = "Variables", ylab = "Importance", main="Impotance des Variables",col=c('cornflowerblue','chocolate3','aquamarine2','brown2','burlywood3','slategray2','khaki4','peru','skyblue2','violet','darkorange1','gold2','lightpink4','seagreen4'))
+```
 
 # Forêt aléatoires
 
 
 ```{r echo = FALSE, results=FALSE, warning=FALSE, include = FALSE}
-setwd('~/Cours/STA212/STA212DM')
+#setwd('~/Cours/STA212/STA212DM')
+setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
 rm(list = objects())
 graphics.off()
 library(readr)
-email <- read_csv("~/Cours/STA212/STA212DM/email.csv")
+email <- read_csv("email.csv")
 View(email)
 ```
 
