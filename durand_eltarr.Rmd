@@ -2,15 +2,16 @@
 header-includes:
 - \usepackage{stmaryrd}
 - \usepackage{amsfonts}
+- \usepackage{amsmath}
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 ---
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 
 ```
 
@@ -33,8 +34,8 @@ Loukman Eltarr
 # Arbre de décision unique
 
 ```{r}
-#setwd('~/Cours/STA212/STA212DM')
-setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
+setwd('~/Cours/STA212/STA212DM')
+#setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
 rm(list = objects())
 graphics.off()
 OJ=read.csv("oj.csv", header = TRUE)
@@ -163,8 +164,8 @@ barchart(three.1$variable.importance,xlab = "Variables", ylab = "Importance", ma
 
 
 ```{r echo = FALSE, results=FALSE, warning=FALSE, include = FALSE}
-#setwd('~/Cours/STA212/STA212DM')
-setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
+setwd('~/Cours/STA212/STA212DM')
+#setwd("/home/lokmen/Documents/ENSTA/STAT/STA212/STA212DM")
 rm(list = objects())
 graphics.off()
 library(readr)
@@ -181,13 +182,16 @@ email$Class = as.factor(email$Class)
 
 ## Question 4
 
-```{r results=FALSE}
+```{r message=FALSE, warning=FALSE}
 require(rpart)
 require(rpart.plot)
 require(ipred)
 require(caret)
 require(randomForest)
 require(doParallel)
+```
+
+```{r results=FALSE}
 N = nrow(email)
 set.seed(103)
 train = sample(1:N, round(0.75*N))
@@ -261,12 +265,12 @@ Nous avons donc une erreur de test de 7,5%.
 
 Enfin, nous ajustons un modèle random forrest à 100 arbres en choisisant le mtry, (c'est à dire le nombre de variable que l'on prend pour chaque arbre), par validation croisée.
 
-```{r eval=FALSE, include = FALSE}
+```{r eval=FALSE}
 cl <- makePSOCKcluster(5)
 registerDoParallel(cl)
 
 control <- trainControl(method="repeatedcv", number=5, repeats=10)
-rfGrid <-  expand.grid(mtry = 55:55)
+rfGrid <-  expand.grid(mtry = 50:57)
 RFmodel <- train(Class~., data=email.tr, method="rf", 
                  trControl=control,
                  ntree=100, 
@@ -280,9 +284,9 @@ plot(RFmodel)
 Le choix de mtry est reproductible grâce à la validation croisée.
 
 Puis on peut évaluer l'erreur de test :
-```{r eval=FALSE, include = FALSE}
+```{r eval=FALSE}
 pred.rf <- predict(RFmodel, email.te)
-mean(email.te$Class != pred.rf)
+mean(abs(ifelse(email.te$Class == "Spam", 1,0) - ifelse(pred.rf == "Spam", 1,0)))
 
 ```
 
@@ -296,27 +300,9 @@ On a une erreur de test de 7%.
 
 ## Question 10
 
-$$
-\begin{tabular}{|l|M{4cm}|M{4cm}|M{4cm}|r|}
-    \hline
-     & &     Perte \\
-     & & exponentielle & Perte binaire \\
-     \hat{c}(x_*) & \hat{y}_* & exp(-y_* \hat{c}(x_*)) & 1(y_* \neq \hat{y}_*) & y_* \tabularnewline
-    \hline
-    0.3 & & & & -1
-\tabularnewline
-    \hline
-    -0.2 & & & & -1
-\tabularnewline
-    \hline
-    1.5 & & & & 1
-\tabularnewline
-    \hline
-    -4.3 & & & & 1
-\tabularnewline
-    \hline
- \end{tabular}
-$$
+
+\begin{tabular}{|l|c|c|c|r|} \hline & &  \textbf{Perte}  & &  \\ & & \textbf{exponentielle} & \textbf{Perte binaire} & \\ $\hat{c}(x_*)$ & $\hat{y}_*$ & $exp(-y_* \hat{c}(x_*))$ &   $1(y_* \neq \hat{y}_*)$ & $y_*$ \tabularnewline \hline 0.3 & & & & -1 \tabularnewline \hline -0.2 & & & & -1 \tabularnewline \hline 1.5 & & & & 1 \tabularnewline \hline -4.3 & & & & 1 \tabularnewline \hline \end{tabular}
+
 
 
 
